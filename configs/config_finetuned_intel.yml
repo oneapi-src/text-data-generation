@@ -1,0 +1,14 @@
+# config_base.yaml
+version: 1.0
+
+# model config
+model:
+  format: onnx # default, onnx
+  pretrained_model: gpt2-medium
+  path: saved_models/gpt2-medium-finetuned-intel-onnx
+
+# generation config
+generation:
+  prompt_file: prompt.csv # file of seed texts, [optional]
+  min_length: 0 # minimum length of sentence to generate
+  max_length_buffer: 20 # max_length = min_length + max_length_buffer
