@@ -1,0 +1,13 @@
+name: text-stock-torch
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9.7
+  - pip=21.2.4
+  - pytorch::pytorch=1.13.1
+  - pip:
+    - pandas==1.5.3
+    - numpy==1.23.5
+    - transformers==4.26.1
+    - datasets==2.10.1
+    - optimum[onnxruntime]==1.6.4
