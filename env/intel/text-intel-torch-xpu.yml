@@ -1,0 +1,15 @@
+# Refer to https://intel.github.io/intel-extension-for-pytorch/xpu/1.13.10+xpu/tutorials/getting_started.html
+# for intel_extension_for_pytorch installation.
+name: text-intel-torch
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9.7
+  - pip=21.2.4
+  - pip:
+    - neural-compressor==2.0
+    - pandas==1.5.3
+    - numpy==1.23.5
+    - transformers==4.26.1
+    - datasets==2.10.1
+    - optimum[onnxruntime]==1.6.4

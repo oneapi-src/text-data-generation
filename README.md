@@ -182,7 +182,7 @@ Using the fine-tuned model to generate new text can be done using the `generate_
 The arguments for the `generate_text.py` script are as follows:
 
 ```
-usage: generate_text.py [-h] --model_config MODEL_CONFIG [--benchmark_mode] [--benchmark_seq_length BENCHMARK_SEQ_LENGTH]
+usage: generate_text.py [-h] --model_config MODEL_CONFIG [--benchmark_mode] [--benchmark_seq_length BENCHMARK_SEQ_LENGTH] [--device cpu]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -191,6 +191,8 @@ optional arguments:
   --benchmark_mode      use intel pytorch extension to optimize model.
   --benchmark_seq_length BENCHMARK_SEQ_LENGTH
                         length of generation if benchmark mode is used.
+  --device cpu
+           Choose run on cpu or xpu, default is cpu.
 ```
 
 **Configuration Parameters**
@@ -242,14 +244,17 @@ Within the yaml configuration file, the following optional arguments can be spec
 
 **YAML file**                                 | **Environment Name** |  **Configuration** |
 | :---: | :---: | :---: |
-`env/intel/text-intel-torch.yml`             | `text-intel-torch` | Python=3.9.7, PyTorch v1.13, Intel® Extension for PyTorch v1.13, Intel® Neural Compressor v2.0.0 |
+`env/intel/text-intel-torch-cpu.yml`             | `text-intel-torch` | Python=3.9.7, PyTorch v1.13, Intel® Extension for PyTorch v1.13, Intel® Neural Compressor v2.0.0 |
+`env/intel/text-intel-torch-xpu.yml`             | `text-intel-torch` | Python=3.9.7, PyTorch v1.13, Intel® Extension for PyTorch v1.13+xpu, Intel® Neural Compressor v2.0.0 |
 
 ### Optimized Solution Setup
 
-Follow the below conda installation commands to setup the Intel® oneAPI optimized PyTorch environment for model training and text generation. 
+Follow the below conda installation commands to setup the Intel® oneAPI optimized PyTorch environment for model training and text generation. Please choose `env/intel/text-intel-torch-xpu.yml` if you have Intel GPU available.
 
 ```sh
-conda env create -f env/intel/text-intel-torch.yml
+conda env create -f env/intel/text-intel-torch-cpu.yml # For CPU
+or
+conda env create -f env/intel/text-intel-torch-xpu.yml # For XPU
 ```
 
 *Activate stock conda environment*
@@ -257,12 +262,17 @@ Use the following command to activate the environment that was created:
 ```sh
 conda activate text-intel-torch
 ```
+Please perform this additional installation step only if you are using an Intel GPU, CPU users can skip this step:
+```sh
+pip install -r env/intel/update_to_torch_xpu.txt
+```
 
-This script utilizes the dependencies found in the `env/intel/text-intel-torch.yml` file to create an environment as follows:
+This script utilizes the dependencies found in the `env/intel/text-intel-torch-cpu.yml` or `env/intel/text-intel-torch-xpu.yml` file to create an environment as follows:
 
 |     **YAML file**     | **Environment Name** |        **Configuration**        |
 | :-------------------: | :------------------: | :-----------------------------: |
-| `env/intel/text-intel-torch.yml` |     `text-intel-torch`      | Python=3.9.x with PyTorch v1.13, Intel® Extension For PyTorch v 1.13.0, Intel® Neural Compressor v2.0.0 |
+| `env/intel/text-intel-torch-cpu.yml` |     `text-intel-torch`      | Python=3.9.x with PyTorch v1.13, Intel® Extension For PyTorch v 1.13.0, Intel® Neural Compressor v2.0.0 |
+| `env/intel/text-intel-torch-xpu.yml, update_to_torch_xpu.txt` |     `text-intel-torch`      | Python=3.9.x with PyTorch v1.13, Intel® Extension For PyTorch v 1.13.0+xpu, Intel® Neural Compressor v2.0.0 |
 
 ### Intel® oneAPI Optimized Implementation
 
@@ -278,6 +288,33 @@ The Intel® Extension for PyTorch* extends PyTorch with optimizations for an ext
 
 The command to fine-tune the model with Intel® optimizations enabled is:
 
+```sh
+ipexrun --use_logical_core --enable_tcmalloc src/finetune_model.py --model_config configs/config_base.yml --data_path data/abcnews-date-text.csv --save_path saved_models/gpt2-medium-finetuned-intel --intel
+```
+
+**For Intel GPU training**, device 'xpu' must be added to 'python/site-packages/transformers/training_args.py' as shown in the below diff at lines.
+It can be changed manually follows:
+```python
+diff --git a/training_args.py b/training_args.py
+index 1a90710..9421ccd 100644
+--- a/training_args.py
++++ b/training_args.py
+@@ -1466,6 +1466,8 @@ class TrainingArguments:
+                 torch.distributed.init_process_group(
+                     backend=self.xpu_backend, rank=rank, world_size=size, timeout=self.ddp_timeout_delta
+                 )
++        elif torch.xpu.is_available():
++            device = torch.device("xpu")
+         elif is_torch_tpu_available():
+             device = xm.xla_device()
+             self._n_gpu = 0
+```
+Or  to apply the patch automatically, please run the following Python script only once.
+```bash
+$ cd src
+$ python ./apply_xpu_patch.py
+```
+and then run the fine tuning step as follows:
 ```sh
 ipexrun --use_logical_core --enable_tcmalloc src/finetune_model.py --model_config configs/config_base.yml --data_path data/abcnews-date-text.csv --save_path saved_models/gpt2-medium-finetuned-intel --intel
 ```
@@ -306,6 +343,11 @@ As above, this trained model can be used to generate text using the provided `ge
 
 ```sh
 python src/generate_text.py --model_config configs/config_finetuned_intel.yml
+```
+
+To run inference on an Intel GPU, please run the following
+```sh
+python src/generate_text.py --model_config configs/config_finetuned_inc.yml --device xpu
 ```
 
 **Expected Output**<br>
@@ -346,6 +388,11 @@ Once the quantized model is created, we can use the `generate_text.py` script on
 
 ```sh
 python src/generate_text.py --model_config configs/config_finetuned_inc.yml
+```
+
+To run inference on an Intel GPU, please run the following
+```sh
+python src/generate_text.py --model_config configs/config_finetuned_inc.yml --device xpu
 ```
 
 ## Performance Observations
