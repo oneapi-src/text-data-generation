@@ -383,6 +383,94 @@ Intel technologies may require enabled hardware, software or service activation.
 
 ## Appendix
 
+### Running a GPTJ-6B model
+GPT-J 6B is a transformer model trained using Ben Wang's [Mesh Transformer JAX](https://github.com/kingoflolz/mesh-transformer-jax/). "GPT-J" refers to the class of model, while "6B" represents the number of trainable parameters.
+> Note: The following steps has been carried out on an Intel® Sapphire Rapid Instance.
+<br>
+
+#### Reference Implementation
+
+#### Setup Environment
+1. Acitvate the existing stock environment
+```bash
+conda activate text-stock-torch
+```
+
+##### Inference
+Run the script to generate text using the Quantized gpt-j-6B IR model with the Stock environment
+```bash
+usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
+
+arguments:
+  -h, --help            show this help message and exit
+  --model         <str> Required. Specify the model type. Either int8 or fp32.
+  --prompt        <str> Required. Prompt to be used for generation.
+  --model_path    <str> Optional. Model path to the IR model. Needed if int8 model is used.
+```
+> Note: This step would download approximately 24GB size of model file.
+
+##### Sample Execution and Output
+Command
+```bash
+python src/gptj_generate_text.py --model fp32  --prompt "hello i am"
+```
+Output
+It will provide the generated text along with the time taken (sec)
+```text
+Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
+```
+
+#### Intel Optimized Implementation
+##### Setup Environment
+To perform text generation using Intel® Extension for Transformers:
+Create a new Conda environment and activate it 
+```bash
+conda env create -f env/intel/text-intel-gptj.yml
+conda activate text-intel-gptj
+```
+
+##### GPTJ Model Quantization
+From the [Huggingface Text-Generation Deployment](https://github.com/intel/intel-extension-for-transformers/tree/main/examples/huggingface/pytorch/text-generation/deployment), follow the step-by-step instructions in its `README.md` file to create the Intermediate Representation (IR) model. 
+    - Make sure to properly set up the environment variables and install the required dependencies.
+    - After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the existing repository to the current directory
+    - The folder structure should now look like:
+```text
+  ...
+  env/
+  src/
+    ...
+    gptj_generate_text.py
+    generation_utils.py
+  ir_model/
+    conf.yaml
+    model.bin
+```
+##### Inference
+Run the script to generate text using the Quantized gpt-j-6B IR model
+```bash
+usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
+
+arguments:
+  -h, --help                show this help message and exit
+  --model           <str>   Required. Specify the model type. Either int8 or fp32.
+  --prompt          <str>   Required. Prompt to be used for generation.
+  --model_path      <str>   Optional. Model path to the IR model. Needed if int8 model is used.
+  --max_new_tokens  <int>   Optional. Maximum tokens to be returned. Default = 32
+  --temperature     <float> Optional. Temperature to be used by the model. Default = 0.9
+```   
+
+##### Sample Execution and Output
+Command
+```bash
+python src/gptj_generate_text.py --model int8  --prompt "hello i am" --model_path ir_model/
+```
+Output
+It will provide the generated text along with the time taken (sec)
+```text
+Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
+```
+
+
 ### Running on Windows
 
 The original reference kits commands were built using a Linux based system.  In order to run these commands on Windows, go to Start and open WSL.  The Linux instructions provided can then be run in the WSL window starting from the git clone instructions. If WSL is not installed you can [install WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
