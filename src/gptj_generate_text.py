@@ -32,6 +32,7 @@ class GPTJModelF32:
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
     # Generates text completion for a provided prompt, along with the time taken
+    # Returns - <prompt>,<time taken>
     def generate_text(self, prompt, max_new_tokens=32, temperature=0.9, headline=False):
         prompt = [prompt] 
         tic = time.time()
@@ -49,7 +50,7 @@ class GPTJModelI8:
     Utilizes an INT8 IR model to generate text
 
     Args:
-        ir_path (str): A valid path where a IR model resides
+        ir_path (str): A valid path where an IR model resides
     """
 
     def __init__(self, ir_path="../int8_ir/"):
@@ -64,7 +65,6 @@ class GPTJModelI8:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
         with init_empty_weights():
             self.model = AutoModelForCausalLM.from_config(config)
-
         # Setting custom attributes
         setattr(self.model, "generate",  types.MethodType(itrex_generation_utils.GenerationMixin.generate, self.model))
         setattr(self.model, "beam_search", types.MethodType(itrex_generation_utils.GenerationMixin.beam_search, self.model))
@@ -73,12 +73,13 @@ class GPTJModelI8:
         setattr(self.model, "_extract_past_from_model_output", types.MethodType(itrex_generation_utils.GenerationMixin._extract_past_from_model_output, self.model))
         self.model.eval()
 
-    # Uses the IR model, for engine
+    # Uses the IR model
     def compile_ir_model(self):
         self.graph = compile(self.ir_path)
         print("Using IR file {}".format(self.ir_path))
 
     # Generates text completion for a provided prompt, along with the time taken
+    # Returns - <prompt>,<time taken>
     def generate_text(self, prompt, max_new_tokens=32, temperature=0.9):
         prompt = [prompt]
         generate_kwargs = dict(do_sample=False, temperature=temperature, num_beams=4, past_kv_nums=28, llama=False)
@@ -107,22 +108,19 @@ if __name__ == '__main__':
                         required=True, 
                         type=str)
     parser.add_argument('--model_path', 
-                        help="Path to the generated INT8 IR model",
+                        help="Path to the generated INT8 IR model. Required if model used is int8",
                         required=False, 
                         type=str)
     parser.add_argument('--max_new_tokens', 
-                        help="Path to the generated INT8 IR model",
+                        help="Maximum no. of new tokens to be generated. Default - 32",
                         required=False, 
                         default=32,
                         type=int)
     parser.add_argument('--temperature', 
-                        help="Path to the generated INT8 IR model",
+                        help="Teperature parameter for the GPT model. Default - 0.9",
                         required=False, 
                         default=0.9,
                         type=str)
-
-
-    ## TODO params
     FLAGS = parser.parse_args()
 
     if not FLAGS.prompt:
@@ -142,13 +140,11 @@ if __name__ == '__main__':
             gptj = GPTJModelI8(FLAGS.model_path)
             res, sec = gptj.generate_text(FLAGS.prompt, max_new_tokens=FLAGS.max_new_tokens, temperature=FLAGS.temperature)
             print(res, sec)
-
     # For FP32 model execution
     elif FLAGS.model == 'fp32':
         from transformers import AutoModelForCausalLM, AutoTokenizer
         gptj = GPTJModelF32()
         res, sec = gptj.generate_text(FLAGS.prompt, max_new_tokens=FLAGS.max_new_tokens, temperature=FLAGS.temperature)
         print(res, sec)
-
     else:
-        print("[Invalid] Model provided is incorrect. Provide one among 'int8' / 'fp32' ")
+        print("[Invalid] Model provided is incorrect. Provide either 'int8' / 'fp32' ")

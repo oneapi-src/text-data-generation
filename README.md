@@ -386,9 +386,10 @@ Intel technologies may require enabled hardware, software or service activation.
 ### Running a GPTJ-6B model
 GPT-J 6B is a transformer model trained using Ben Wang's [Mesh Transformer JAX](https://github.com/kingoflolz/mesh-transformer-jax/). "GPT-J" refers to the class of model, while "6B" represents the number of trainable parameters.
 > Note: The following steps has been carried out on an Intel® Sapphire Rapid Instance.
+
 <br>
 
-#### Reference Implementation
+#### <u>Reference Implementation</u>
 
 #### Setup Environment
 1. Acitvate the existing stock environment
@@ -397,7 +398,7 @@ conda activate text-stock-torch
 ```
 
 ##### Inference
-Run the script to generate text using the Quantized gpt-j-6B IR model with the Stock environment
+Run the `gptj_generate_text.py` script to generate text using the Quantized gpt-j-6B IR model with the Stock environment
 ```bash
 usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
 
@@ -407,20 +408,23 @@ arguments:
   --prompt        <str> Required. Prompt to be used for generation.
   --model_path    <str> Optional. Model path to the IR model. Needed if int8 model is used.
 ```
-> Note: This step would download approximately 24GB size of model file.
+> Note: This step downloads a 24GB model file. Ensure you have enough speed and storage space for a smooth experience.
+
+<br>
 
 ##### Sample Execution and Output
 Command
 ```bash
 python src/gptj_generate_text.py --model fp32  --prompt "hello i am"
 ```
-Output
-It will provide the generated text along with the time taken (sec)
+Output<br>
+The generated text along with the time taken (in seconds) will be returned
 ```text
 Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
 ```
+<br>
 
-#### Intel Optimized Implementation
+#### <u>Intel Optimized Implementation</u>
 ##### Setup Environment
 To perform text generation using Intel® Extension for Transformers:
 Create a new Conda environment and activate it 
@@ -430,23 +434,25 @@ conda activate text-intel-gptj
 ```
 
 ##### GPTJ Model Quantization
-From the [Huggingface Text-Generation Deployment](https://github.com/intel/intel-extension-for-transformers/tree/main/examples/huggingface/pytorch/text-generation/deployment), follow the step-by-step instructions in its `README.md` file to create the Intermediate Representation (IR) model. 
-    - Make sure to properly set up the environment variables and install the required dependencies.
-    - After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the existing repository to the current directory
-    - The folder structure should now look like:
+From the [Intel Extension for Transformers, Text-Generation Deployment](https://github.com/intel/intel-extension-for-transformers/tree/main/examples/huggingface/pytorch/text-generation/deployment) - follow the step-by-step instructions in its `README.md` file to create the Intermediate Representation (IR) model. 
+- Set up the environment variables and install the required dependencies.
+- After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the existing repository to the current directory
+- The folder structure should now look like:
 ```text
   ...
   env/
+  ir_model/
+    conf.yaml
+    model.bin
   src/
     ...
     gptj_generate_text.py
     generation_utils.py
-  ir_model/
-    conf.yaml
-    model.bin
+    ...
+  ...
 ```
 ##### Inference
-Run the script to generate text using the Quantized gpt-j-6B IR model
+Run the `gptj_generate_text` script to generate text using the Quantized gpt-j-6B IR model
 ```bash
 usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
 
@@ -464,12 +470,12 @@ Command
 ```bash
 python src/gptj_generate_text.py --model int8  --prompt "hello i am" --model_path ir_model/
 ```
-Output
-It will provide the generated text along with the time taken (sec)
+Output<br>
+The generated text along with the time taken (in seconds) will be returned
 ```text
 Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
 ```
-
+<br><br>
 
 ### Running on Windows
 
