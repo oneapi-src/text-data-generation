@@ -25,7 +25,7 @@ In this reference kit, we also highlight how the Intel® oneAPI AI Analytics Too
 
 There are many ways of building a text generation system. In this implementation, we will follow the SOTA approach of using a pre-trained language model for text generation, and fine-tuning it with our news headline dataset using the Causal Language Model formulation.  This will refine the model to generate text similar to our source dataset.  The pre-trained model we choose is the popular `gpt2-medium` provided by the HuggingFace `transformers` project though many other models can be used.  
 
-For larger and more powerful systems, more modern, but expensive pre-trained Large Language Models models can be used to improve performance.  For example, `[gpt-j-6B](https://huggingface.co/EleutherAI/gpt-j-6B)` is a 6B parameter open-source implementation of a smaller GPT3 model, trained on a [publicly available dataset](https://huggingface.co/datasets/the_pile).  However, use of this model requires [at least 48GB of CPU RAM to run the model in full precision.](https://huggingface.co/docs/transformers/v4.14.1/en/model_doc/gptj#gptj)
+For larger and more powerful systems, more modern, but expensive pre-trained Large Language Models models can be used to improve performance.  For example, `[gpt-j-6B](https://huggingface.co/EleutherAI/gpt-j-6B)` is a 6B parameter open-source implementation of a smaller GPT3 model, trained on a [publicly available dataset](https://huggingface.co/datasets/the_pile).  However, use of this model requires [at least 48GB of CPU RAM to run the model in full precision.](https://huggingface.co/docs/transformers/v4.14.1/en/model_doc/gptj#gptj) A reference implementation has been showcased in the the [Appendix](#appendix) section.
 
 Our pipeline to build this system will take these steps:
 
@@ -392,13 +392,13 @@ GPT-J 6B is a transformer model trained using Ben Wang's [Mesh Transformer JAX](
 #### <u>Reference Implementation</u>
 
 #### Setup Environment
-1. Acitvate the existing stock environment
+1. Activate the existing stock environment
 ```bash
 conda activate text-stock-torch
 ```
 
 ##### Inference
-Run the `gptj_generate_text.py` script to generate text using the Quantized gpt-j-6B IR model with the Stock environment
+Run the `gptj_generate_text.py` script to generate text using the gpt-j-6B IR model with the Stock environment
 ```bash
 usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
 
@@ -436,7 +436,7 @@ conda activate text-intel-gptj
 ##### GPTJ Model Quantization
 From the [Intel Extension for Transformers, Text-Generation Deployment](https://github.com/intel/intel-extension-for-transformers/tree/main/examples/huggingface/pytorch/text-generation/deployment) - follow the step-by-step instructions in its `README.md` file to create the Intermediate Representation (IR) model. 
 - Set up the environment variables and install the required dependencies.
-- After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the existing repository to the current directory
+- After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the Intel Extension for Transformers repository to the current directory
 - The folder structure should now look like:
 ```text
   ...
