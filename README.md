@@ -420,7 +420,7 @@ python src/gptj_generate_text.py --model fp32  --prompt "hello i am"
 Output<br>
 The generated text along with the time taken (in seconds) will be returned
 ```text
-Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
+hello i am a newbie to the forum and i am looking for some help with my new to me car. i have a 2000 ford escort with 5.1585845947265625
 ```
 <br>
 
