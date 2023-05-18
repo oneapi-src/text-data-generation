@@ -1,0 +1,14 @@
+name: text-intel-gptj
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - mkl
+  - mkl-include
+  - gperftools
+  - jemalloc==5.2.1
+  - pip:
+    - torch==2.0.0
+    - transformers==4.26.0
+    - intel_extension_for_transformers

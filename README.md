@@ -25,7 +25,7 @@ In this reference kit, we also highlight how the Intel® oneAPI AI Analytics Too
 
 There are many ways of building a text generation system. In this implementation, we will follow the SOTA approach of using a pre-trained language model for text generation, and fine-tuning it with our news headline dataset using the Causal Language Model formulation.  This will refine the model to generate text similar to our source dataset.  The pre-trained model we choose is the popular `gpt2-medium` provided by the HuggingFace `transformers` project though many other models can be used.  
 
-For larger and more powerful systems, more modern, but expensive pre-trained Large Language Models models can be used to improve performance.  For example, `[gpt-j-6B](https://huggingface.co/EleutherAI/gpt-j-6B)` is a 6B parameter open-source implementation of a smaller GPT3 model, trained on a [publicly available dataset](https://huggingface.co/datasets/the_pile).  However, use of this model requires [at least 48GB of CPU RAM to run the model in full precision.](https://huggingface.co/docs/transformers/v4.14.1/en/model_doc/gptj#gptj)
+For larger and more powerful systems, more modern, but expensive pre-trained Large Language Models models can be used to improve performance.  For example, `[gpt-j-6B](https://huggingface.co/EleutherAI/gpt-j-6B)` is a 6B parameter open-source implementation of a smaller GPT3 model, trained on a [publicly available dataset](https://huggingface.co/datasets/the_pile).  However, use of this model requires [at least 48GB of CPU RAM to run the model in full precision.](https://huggingface.co/docs/transformers/v4.14.1/en/model_doc/gptj#gptj) A reference implementation has been showcased in the the [Appendix](#appendix) section.
 
 Our pipeline to build this system will take these steps:
 
@@ -382,6 +382,100 @@ Intel technologies may require enabled hardware, software or service activation.
 © Intel Corporation.  Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries.  Other names and brands may be claimed as the property of others.  
 
 ## Appendix
+
+### Running a GPTJ-6B model
+GPT-J 6B is a transformer model trained using Ben Wang's [Mesh Transformer JAX](https://github.com/kingoflolz/mesh-transformer-jax/). "GPT-J" refers to the class of model, while "6B" represents the number of trainable parameters.
+> Note: The following steps has been carried out on an Intel® Sapphire Rapid Instance.
+
+<br>
+
+#### <u>Reference Implementation</u>
+
+#### Setup Environment
+1. Activate the existing stock environment
+```bash
+conda activate text-stock-torch
+```
+
+##### Inference
+Run the `gptj_generate_text.py` script to generate text using the gpt-j-6B IR model with the Stock environment
+```bash
+usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
+
+arguments:
+  -h, --help            show this help message and exit
+  --model         <str> Required. Specify the model type. Either int8 or fp32.
+  --prompt        <str> Required. Prompt to be used for generation.
+  --model_path    <str> Optional. Model path to the IR model. Needed if int8 model is used.
+```
+> Note: This step downloads a 24GB model file. Ensure you have enough speed and storage space for a smooth experience.
+
+<br>
+
+##### Sample Execution and Output
+Command
+```bash
+python src/gptj_generate_text.py --model fp32  --prompt "hello i am"
+```
+Output<br>
+The generated text along with the time taken (in seconds) will be returned
+```text
+hello i am a newbie to the forum and i am looking for some help with my new to me car. i have a 2000 ford escort with 5.1585845947265625
+```
+<br>
+
+#### <u>Intel Optimized Implementation</u>
+##### Setup Environment
+To perform text generation using Intel® Extension for Transformers:
+Create a new Conda environment and activate it 
+```bash
+conda env create -f env/intel/text-intel-gptj.yml
+conda activate text-intel-gptj
+```
+
+##### GPTJ Model Quantization
+From the [Intel Extension for Transformers, Text-Generation Deployment](https://github.com/intel/intel-extension-for-transformers/tree/main/examples/huggingface/pytorch/text-generation/deployment) - follow the step-by-step instructions in its `README.md` file to create the Intermediate Representation (IR) model. 
+- Set up the environment variables and install the required dependencies.
+- After generating the IR model, copy the generated IR model folder and the `generation_utils.py` file from the Intel Extension for Transformers repository to the current directory
+- The folder structure should now look like:
+```text
+  ...
+  env/
+  ir_model/
+    conf.yaml
+    model.bin
+  src/
+    ...
+    gptj_generate_text.py
+    generation_utils.py
+    ...
+  ...
+```
+##### Inference
+Run the `gptj_generate_text` script to generate text using the Quantized gpt-j-6B IR model
+```bash
+usage: gptj_generate_text.py [-h] --model <model_type>  --prompt <prompt> [--model_path <path>]
+
+arguments:
+  -h, --help                show this help message and exit
+  --model           <str>   Required. Specify the model type. Either int8 or fp32.
+  --prompt          <str>   Required. Prompt to be used for generation.
+  --model_path      <str>   Optional. Model path to the IR model. Needed if int8 model is used.
+  --max_new_tokens  <int>   Optional. Maximum tokens to be returned. Default = 32
+  --temperature     <float> Optional. Temperature to be used by the model. Default = 0.9
+```   
+
+##### Sample Execution and Output
+Command
+```bash
+python src/gptj_generate_text.py --model int8  --prompt "hello i am" --model_path ir_model/
+```
+Output<br>
+The generated text along with the time taken (in seconds) will be returned
+```text
+Hello i am new to this forum and i have a question. I have been looking for a way to get my hands on some of the older games that are no longer available 1.808159589767456
+```
+<br><br>
 
 ### Running on Windows
 
