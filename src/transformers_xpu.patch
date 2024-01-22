@@ -1,0 +1,19 @@
+--- a.py        2023-04-04 11:50:27.000000000 +0000
++++ b.py        2023-04-04 11:52:00.000000000 +0000
+@@ -53,6 +53,7 @@
+     requires_backends,
+ )
+
++import intel_extension_for_pytorch
+
+ if is_torch_available():
+     import torch
+@@ -1466,6 +1467,8 @@
+                 torch.distributed.init_process_group(
+                     backend=self.xpu_backend, rank=rank, world_size=size, timeout=self.ddp_timeout_delta
+                 )
++        elif torch.xpu.is_available():
++            device = torch.device("xpu")
+         elif is_torch_tpu_available():
+             device = xm.xla_device()
+             self._n_gpu = 0

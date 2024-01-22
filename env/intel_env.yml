@@ -1,0 +1,18 @@
+name: text_generation_intel
+channels:
+  - intel
+  - conda-forge
+dependencies:
+  - python=3.9
+  - intel-extension-for-pytorch=2.0.100
+  - neural-compressor=2.3.1
+  - numpy=1.24.3
+  - pandas==1.5.3
+  - kaggle==1.5.16
+  - pip=23.3.1
+  - pip:
+    - datasets==2.16.0
+    - accelerate==0.25.0
+    - transformers==4.26.0
+    - optimum[onnxruntime]==1.6.4
+    - onnxruntime==1.16.3

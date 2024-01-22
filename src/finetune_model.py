@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 # pylint: disable=C0415,E0401,R0914
@@ -25,7 +25,7 @@ from transformers import (
 import torch
 
 from utils import data_load
-
+import intel_extension_for_pytorch as ipex
 
 def main(flags):
 
@@ -49,13 +49,12 @@ def main(flags):
     optimizer = torch.optim.AdamW(model.parameters(), lr=flags.lr)
 
     # use IPEX to optimize model and optimizer for training
-    if flags.intel:
-        import intel_extension_for_pytorch as ipex
-        if flags.bfloat16:
-            model, optimizer = ipex.optimize(
+    if flags.bfloat16:
+        model, optimizer = ipex.optimize(
                 model, optimizer=optimizer, dtype=torch.bfloat16)
-        else:
-            model, optimizer = ipex.optimize(
+        model = model.bfloat16() # Prevents "RuntimeError: mat1 and mat2 must have the same dtype"
+    else:
+        model, optimizer = ipex.optimize(
                 model, optimizer=optimizer, dtype=torch.float32)
 
     lr_scheduler = get_scheduler(
@@ -74,7 +73,7 @@ def main(flags):
         num_train_epochs=flags.num_epochs,
         evaluation_strategy="no",
         save_strategy="no",
-        warmup_steps=10,
+        warmup_steps=10
     )
 
     # Train the model with our dataset for Causal Language Modeling
@@ -126,12 +125,6 @@ if __name__ == "__main__":
                         required=False,
                         default=5e-5,
                         help='learning rate for training. Defaults to 5e-5.')
-
-    parser.add_argument('--intel',
-                        required=False,
-                        help="use intel pytorch extension to optimize model. Defaults to False.",
-                        action="store_true",
-                        default=False)
 
     parser.add_argument('--bfloat16',
                         required=False,

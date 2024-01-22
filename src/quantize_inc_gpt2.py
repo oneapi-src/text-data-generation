@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 # pylint: disable=C0415,E0401,R0914
@@ -16,7 +16,7 @@ import os
 import onnxruntime as ort
 import numpy as np
 from onnxruntime.transformers import optimizer
-from onnxruntime.transformers.onnx_model_bert import BertOptimizationOptions
+from onnxruntime.transformers.fusion_options import FusionOptions
 from neural_compressor.config import AccuracyCriterion, PostTrainingQuantConfig
 from neural_compressor import quantization
 import torch
@@ -106,7 +106,7 @@ def quantize_model(model, tokenizer, val_data):
     accuracy_criterion.higher_is_better = False
     accuracy_criterion.relative = 0.11
     config = PostTrainingQuantConfig(approach='dynamic',
-                                     op_name_list={'MatMul_2924': {
+                                     op_name_dict={'MatMul_2924': {
                                          'activation': {'dtype': ['fp32']},
                                          'weight': {'dtype': ['fp32']}
                                      }},
@@ -141,7 +141,7 @@ def main(flags) -> None:
     # Load ONNX specifics based on the GPT2 model
     if 'path' in conf['model'] and conf['model']['path'] is not None:
         # GPT2 optimizer
-        opt_options = BertOptimizationOptions('gpt2')
+        opt_options = FusionOptions('gpt2')
         opt_options.enable_embed_layer_norm = False
         model_optimizer = optimizer.optimize_model(
             os.path.join(conf['model']['path'], "model.onnx"),

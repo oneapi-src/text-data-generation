@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 # pylint: disable=C0415,E0401,R0914
@@ -26,7 +26,7 @@ from transformers import (
     AutoModelForCausalLM,
     set_seed
 )
-
+import intel_extension_for_pytorch as ipex
 
 def generate_text(
     tokenizer: PreTrainedTokenizer,
@@ -36,7 +36,8 @@ def generate_text(
     min_length: int = 0,
     max_length: int = 10,
     algorithm: str = 'greedy',
-    stop_token: str = '.') -> Tuple[List[int],float]:
+    stop_token: str = '.',
+    device: str = 'cpu') -> Tuple[List[int],float]:
     """Generate text using the provided model and algorithm.
 
     Args:
@@ -61,22 +62,38 @@ def generate_text(
             of model inference calls
     """
     
-
     all_token_ids = input_ids.clone()
     all_attention_masks = attention_mask.clone()
     eos_token_id = tokenizer([stop_token], return_tensors='np')[
         'input_ids'][0][0]
     has_eos = torch.zeros(1, dtype=torch.bool)
+    ones_mask = torch.ones([1, 1])
 
+    if device == 'xpu':
+        print("#### xpu")
+        all_token_ids = input_ids.to("xpu")
+        all_attention_masks = attention_mask.to("xpu")
+        eos_token_id = torch.tensor([eos_token_id], device=torch.device("xpu"))
+        has_eos = has_eos.to("xpu")
+        ones_mask = ones_mask.to("xpu")
+        model = model.to("xpu")
+    
     total_time = 0
     for step in range(max_length):
-
-        if isinstance(model, torch.nn.Module):
+        if isinstance(model, torch.nn.Module) and device == 'cpu':
             start = time.time()
             next_token_logits = torch.nn.functional.softmax(
                 model(
                     input_ids=all_token_ids,
                     attention_mask=all_attention_masks)[:, -1, :], dim=1)
+            end = time.time()
+            total_time += end - start
+        elif isinstance(model, torch.nn.Module) and device == 'xpu':
+            start = time.time()
+            next_token_logits = torch.nn.functional.softmax(
+                model(
+                    input_ids=all_token_ids,
+                    attention_mask=all_attention_masks)[0][:, -1, :], dim=1)
             end = time.time()
             total_time += end - start
         elif isinstance(model, ort.InferenceSession):
@@ -101,7 +118,7 @@ def generate_text(
         all_token_ids = torch.cat(
             [all_token_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
         all_attention_masks = torch.cat(
-            [all_attention_masks, torch.ones([1, 1])], dim=-1).type_as(all_attention_masks)
+            [all_attention_masks, ones_mask], dim=-1).type_as(all_attention_masks)
         if step > min_length and next_tokens == eos_token_id:
             break
 
@@ -115,8 +132,8 @@ def generate(
         max_length: int = 10,
         prompt_file: str = None,
         benchmark_mode: bool = False,
-        n_runs: int = 100):
-
+        n_runs: int = 100,
+        device: str = 'cpu'):
     # read prompts from file into a list for batch processing
     tokenized_input = []
     if not benchmark_mode and prompt_file is not None:
@@ -143,7 +160,8 @@ def generate(
                     tokenized_prompt.attention_mask,
                     min_length=max_length,
                     max_length=max_length,
-                    algorithm='greedy')
+                    algorithm='greedy',
+                    device=device)
                 if i > 10:
                     times.append(total_time)
         print(f"Average Generation time: {np.mean(times)}s")
@@ -160,7 +178,8 @@ def generate(
                 tokenized_prompt.attention_mask,
                 min_length=min_length,
                 max_length=max_length,
-                algorithm='sample')
+                algorithm='sample',
+                device=device)
             tokenized_output.append(res)
 
         out_json = []
@@ -216,7 +235,8 @@ def main(flags):
         min_length=min_length,
         max_length=max_length,
         prompt_file=prompt_file,
-        benchmark_mode=flags.benchmark_mode
+        benchmark_mode=flags.benchmark_mode,
+        device=flags.device
     )
 
 
@@ -241,6 +261,12 @@ if __name__ == "__main__":
                         type=int,
                         default=10
                         )
+    parser.add_argument('--device',
+                        type=str,
+                        choices=['cpu', 'xpu'],
+                        required=False,
+                        default='cpu',
+                        help='Choose run on cpu or xpu, default is cpu.')
 
     FLAGS = parser.parse_args()
     main(FLAGS)
